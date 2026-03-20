@@ -1,7 +1,8 @@
 import { ClerkProvider, useAuth } from "@clerk/expo";
 import { tokenCache } from "@clerk/expo/token-cache";
+import { ConvexProviderWithAuth } from "convex/react";
 import { ConvexReactClient } from "convex/react";
-import { ConvexProviderWithClerk } from "convex/react-clerk";
+import { useCallback, useMemo } from "react";
 
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 
@@ -13,6 +14,34 @@ const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL!, {
   unsavedChangesWarning: false,
 });
 
+function useAuthFromClerk() {
+  const { isLoaded, isSignedIn, getToken } = useAuth();
+
+  const fetchAccessToken = useCallback(
+    async ({ forceRefreshToken }: { forceRefreshToken: boolean }) => {
+      try {
+        const token = await getToken({
+          template: "convex",
+          skipCache: forceRefreshToken,
+        });
+        return token;
+      } catch {
+        return null;
+      }
+    },
+    [getToken],
+  );
+
+  return useMemo(
+    () => ({
+      isLoading: !isLoaded,
+      isAuthenticated: isSignedIn ?? false,
+      fetchAccessToken,
+    }),
+    [isLoaded, isSignedIn, fetchAccessToken],
+  );
+}
+
 export default function ClerkAndConvexProvider({
   children,
 }: {
@@ -20,9 +49,9 @@ export default function ClerkAndConvexProvider({
 }) {
   return (
     <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-      <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
+      <ConvexProviderWithAuth client={convex} useAuth={useAuthFromClerk}>
         {children}
-      </ConvexProviderWithClerk>
+      </ConvexProviderWithAuth>
     </ClerkProvider>
   );
 }
