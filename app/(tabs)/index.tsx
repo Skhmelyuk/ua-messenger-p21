@@ -1,32 +1,37 @@
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, TouchableOpacity, FlatList } from "react-native";
 import { useAuth } from "@clerk/expo";
+import { Ionicons } from "@expo/vector-icons";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { styles } from "@/styles/feed.styles";
+import { COLORS } from "@/constants/theme";
+import { Post } from "@/components/Post";
+import { Loader } from "@/components/Loader";
+import { StoriesSection } from "@/components/StoriesSection";
 
-export default function ScreenHome() {
+export default function HomeScreen() {
+  const { signOut } = useAuth();
+  const posts = useQuery(api.posts.getPosts);
 
-    const { signOut } = useAuth();
+  if (posts === undefined) return <Loader />;
 
-    const handleLogout = async () => {
-        await signOut();
-    };
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>ua-messenger</Text>
+        <TouchableOpacity onPress={() => signOut()}>
+          <Ionicons name="log-out-outline" size={24} color={COLORS.white} />
+        </TouchableOpacity>
+      </View>
 
-    return (
-        <View style={styles.container}>
-            <Text style={{ color: "#fff" }}>Screen Home</Text>
-            <TouchableOpacity
-                style={{ backgroundColor: "#fff", padding: 10, borderRadius: 10, marginTop: 10 }}
-                onPress={handleLogout}
-            >
-                <Text style={{ color: "#000" }}>Logout</Text>
-            </TouchableOpacity>
-        </View>
-    );
+      <FlatList
+        data={posts}
+        renderItem={({ item }) => <Post post={item} />}
+        keyExtractor={(item) => item._id}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 60 }}
+        ListHeaderComponent={<StoriesSection />}
+      />
+    </View>
+  );
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "#000",
-    },
-});
