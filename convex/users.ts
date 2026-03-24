@@ -1,5 +1,25 @@
-import { mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { mutation, MutationCtx, QueryCtx } from "./_generated/server";
+
+export const getAuthenticatedUser = async (ctx: QueryCtx | MutationCtx) => {
+  const identity = await ctx.auth.getUserIdentity();
+  if (!identity) {
+    throw new Error("not auhtenticated");
+  }
+
+  const currentUser = await ctx.db
+    .query("users")
+    .withIndex("by_tokenIdentifier", (q) =>
+      q.eq("tokenIdentifier", identity.tokenIdentifier),
+    )
+    .first();
+
+  if (!currentUser) {
+    throw new Error("error");
+  }
+
+  return currentUser;
+};
 
 export const createUser = mutation({
   args: {
@@ -9,6 +29,7 @@ export const createUser = mutation({
     bio: v.optional(v.string()),
     image: v.string(),
     clerkId: v.string(),
+    tokenIdentifier: v.string(),
   },
 
   handler: async (ctx, args) => {
@@ -29,6 +50,33 @@ export const createUser = mutation({
       following: 0,
       posts: 0,
       clerkId: args.clerkId,
+      tokenIdentifier: args.tokenIdentifier,
+    });
+  },
+});
+
+export const updateUser = mutation({
+  args: {
+    clerkId: v.string(),
+    image: v.string(),
+    fullname: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId))
+      .first();
+
+    if (!user) return;
+
+    // Оптимізація: пропускаємо запис, якщо дані не змінилися
+    if (user.image === args.image && user.fullname === args.fullname) {
+      return;
+    }
+
+    await ctx.db.patch(user._id, {
+      image: args.image,
+      fullname: args.fullname,
     });
   },
 });

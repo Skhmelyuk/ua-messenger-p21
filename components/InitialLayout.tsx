@@ -1,33 +1,32 @@
-import { useEffect } from "react";
-import { useAuth } from "@clerk/expo";
-import * as SplashScreen from "expo-splash-screen";
+import { useConvexAuth } from "convex/react";
 import { Stack, useRouter, useSegments } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import { useEffect } from "react";
 
 export default function InitialLayout() {
-  const { isSignedIn, isLoaded } = useAuth();
+  const { isAuthenticated, isLoading } = useConvexAuth();
 
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoaded) return;
+    // Чекаємо, поки завершиться завантаження стану авторизації
+    if (isLoading) return;
 
     const inAuthScreen = segments[0] === "(auth)";
 
-    // Якщо користувач залогінений — забороняємо тільки auth-екрани.
-    // Інші роути (наприклад /user/[id]) мають відкриватися без редіректу.
-    if (isSignedIn && inAuthScreen) {
+    if (isAuthenticated && inAuthScreen) {
       router.replace("/(tabs)");
-    } else if (!isSignedIn && !inAuthScreen) {
-      // Якщо НЕ залогінений — дозволяємо тільки auth-екрани.
+    } else if (!isAuthenticated && !inAuthScreen) {
       router.replace("/(auth)/login");
     }
 
-    // Ховаємо splash тільки після редіректу
+    // Ховаємо сплеш-скрін тільки тоді, коли ми вже знаємо стан авторизації
     SplashScreen.hideAsync();
-  }, [isSignedIn, isLoaded, segments, router]);
+  }, [isAuthenticated, isLoading, segments, router]);
 
-  if (!isLoaded) {
+  // Поки йде завантаження (isLoading: true), не рендеримо нічого (сплеш-скрін ще активний)
+  if (isLoading) {
     return null;
   }
 

@@ -12,7 +12,11 @@ export default defineSchema({
     following: v.number(),
     posts: v.number(),
     clerkId: v.string(),
-  }).index("by_clerkId", ["clerkId"]),
+    tokenIdentifier: v.string(),
+  })
+    .index("by_clerkId", ["clerkId"])
+    .index("by_tokenIdentifier", ["tokenIdentifier"]),
+
   posts: defineTable({
     userId: v.id("users"),
     imageUrl: v.string(),
