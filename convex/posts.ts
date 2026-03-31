@@ -125,6 +125,15 @@ export const deletePost = mutation({
       await ctx.db.delete(bookmark._id);
     }
 
+    const notifications = await ctx.db
+      .query("notifications")
+      .withIndex("by_post", (q) => q.eq("postId", args.postId))
+      .collect();
+
+    for (const notification of notifications) {
+      await ctx.db.delete(notification._id);
+    }
+
     // 7. Видалення файлу зі Storage
     await ctx.storage.delete(post.storageId);
 

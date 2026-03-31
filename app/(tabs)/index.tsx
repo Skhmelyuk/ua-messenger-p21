@@ -1,7 +1,7 @@
 import { View, Text, TouchableOpacity, FlatList } from "react-native";
 import { useAuth } from "@clerk/expo";
 import { Ionicons } from "@expo/vector-icons";
-import { useQuery } from "convex/react";
+import { useQuery, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { styles } from "@/styles/feed.styles";
 import { COLORS } from "@/constants/theme";
@@ -11,7 +11,8 @@ import { StoriesSection } from "@/components/StoriesSection";
 
 export default function HomeScreen() {
   const { signOut } = useAuth();
-  const posts = useQuery(api.posts.getPosts);
+  const { isAuthenticated } = useConvexAuth();
+  const posts = useQuery(api.posts.getPosts, isAuthenticated ? {} : "skip");
 
   if (posts === undefined) return <Loader />;
 
