@@ -39,16 +39,16 @@ export default defineSchema({
   }).index("by_post", ["postId"]),
 
   follows: defineTable({
-    followerId: v.id("users"),
-    followingId: v.id("users"),
+    followerId: v.id("users"), // той хто підписується
+    followingId: v.id("users"), // той на кого підписуються
   })
     .index("by_follower", ["followerId"])
     .index("by_following", ["followingId"])
     .index("by_both", ["followerId", "followingId"]),
 
   notifications: defineTable({
-    receiverId: v.id("users"),
-    senderId: v.id("users"),
+    receiverId: v.id("users"), // отримувач
+    senderId: v.id("users"), // відправник
     type: v.union(v.literal("like"), v.literal("comment"), v.literal("follow")),
     postId: v.optional(v.id("posts")),
     commentId: v.optional(v.id("comments")),

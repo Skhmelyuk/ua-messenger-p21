@@ -1,17 +1,19 @@
-import { Post } from "@/components/Post";
-import { StoriesSection } from "@/components/StoriesSection";
-import { COLORS } from "@/constants/theme";
-import { api } from "@/convex/_generated/api";
-import { styles } from "@/styles/feed.styles";
+import { View, Text, TouchableOpacity, FlatList } from "react-native";
 import { useAuth } from "@clerk/expo";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "convex/react";
-import { FlatList, Text, TouchableOpacity, View } from "react-native";
+import { api } from "@/convex/_generated/api";
+import { styles } from "@/styles/feed.styles";
+import { COLORS } from "@/constants/theme";
+import { Post } from "@/components/Post";
+import { Loader } from "@/components/Loader";
+import { StoriesSection } from "@/components/StoriesSection";
 
-export default function ScreenHome() {
+export default function HomeScreen() {
   const { signOut } = useAuth();
-
   const posts = useQuery(api.posts.getPosts);
+
+  if (posts === undefined) return <Loader />;
 
   return (
     <View style={styles.container}>
@@ -23,12 +25,12 @@ export default function ScreenHome() {
       </View>
 
       <FlatList
-        ListHeaderComponent={<StoriesSection />}
+        data={posts}
+        renderItem={({ item }) => <Post post={item} />}
+        keyExtractor={(item) => item._id}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 60 }}
-        data={posts}
-        keyExtractor={(item) => item._id}
-        renderItem={({ item }) => <Post post={item} />}
+        ListHeaderComponent={<StoriesSection />}
       />
     </View>
   );

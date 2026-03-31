@@ -1,80 +1,60 @@
-import { mutation, MutationCtx, query } from "./_generated/server";
 import { v } from "convex/values";
+import { mutation, query } from "./_generated/server";
 import { getAuthenticatedUser } from "./users";
 
-export const generateUploadUrl = mutation(async (ctx: MutationCtx) => {
-  const identity = await ctx.auth.getUserIdentity();
-  if (!identity) throw new Error("Unauthorized");
-  return await ctx.storage.generateUploadUrl();
-});
-
-export const createPost = mutation({
+export const toggleBookmark = mutation({
   args: {
-    caption: v.optional(v.string()),
-    storageId: v.id("_storage"),
+    postId: v.id("posts"),
   },
   handler: async (ctx, args) => {
+    // 1. Отримання поточного користувача
     const currentUser = await getAuthenticatedUser(ctx);
 
-    const imageUrl = await ctx.storage.getUrl(args.storageId);
-    if (!imageUrl) throw new Error("Image URL not found");
+    // 2. Перевірка чи вже є закладка
+    const existing = await ctx.db
+      .query("bookmarks")
+      .withIndex("by_both", (q) =>
+        q.eq("userId", currentUser._id).eq("postId", args.postId),
+      )
+      .first();
 
-    const postId = await ctx.db.insert("posts", {
-      userId: currentUser._id,
-      imageUrl,
-      storageId: args.storageId,
-      caption: args.caption,
-      likes: 0,
-      comments: 0,
-    });
-
-    await ctx.db.patch(currentUser._id, {
-      posts: currentUser.posts + 1,
-    });
-    return postId;
+    // 3. Toggle логіка
+    if (existing) {
+      // Видаляємо закладку
+      await ctx.db.delete(existing._id);
+      return false; // unbookmarked
+    } else {
+      // Додаємо закладку
+      await ctx.db.insert("bookmarks", {
+        userId: currentUser._id,
+        postId: args.postId,
+      });
+      return true; // bookmarked
+    }
   },
 });
 
-export const getPosts = query({
+export const getBookmarkedPosts = query({
   handler: async (ctx) => {
+    // 1. Отримання поточного користувача
     const currentUser = await getAuthenticatedUser(ctx);
 
-    // get all posts
-    const posts = await ctx.db.query("posts").order("desc").collect();
+    // 2. Отримання всіх закладок користувача
+    const bookmarks = await ctx.db
+      .query("bookmarks")
+      .withIndex("by_user", (q) => q.eq("userId", currentUser._id))
+      .order("desc")
+      .collect();
 
-    if (posts.length === 0) return [];
-
-    const postsWithInfo = await Promise.all(
-      posts.map(async (post) => {
-        const postAuthor = (await ctx.db.get(post.userId))!;
-
-        const like = await ctx.db
-          .query("likes")
-          .withIndex("by_user_and_post", (q) =>
-            q.eq("userId", currentUser._id).eq("postId", post._id),
-          )
-          .first();
-
-        const bookmark = await ctx.db
-          .query("bookmarks")
-          .withIndex("by_both", (q) =>
-            q.eq("userId", currentUser._id).eq("postId", post._id),
-          )
-          .first();
-
-        return {
-          ...post,
-          author: {
-            _id: postAuthor?._id,
-            username: postAuthor?.username,
-            image: postAuthor?.image,
-          },
-          isLiked: !!like,
-          isBookmarked: !!bookmark,
-        };
+    // 3. Отримання постів
+    const bookmarksWithInfo = await Promise.all(
+      bookmarks.map(async (bookmark) => {
+        const post = await ctx.db.get(bookmark.postId);
+        return post;
       }),
     );
-    return postsWithInfo;
+
+    return bookmarksWithInfo;
   },
 });
 
