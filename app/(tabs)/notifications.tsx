@@ -1,5 +1,4 @@
-import { View, Text, FlatList, TouchableOpacity } from "react-native";
-import { Image } from "expo-image";
+import { View, Text, FlatList } from "react-native";
 import { useQuery, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { styles } from "@/styles/notifications.styles";
