@@ -94,3 +94,20 @@ export const getUserByClerkId = query({
     return user;
   },
 });
+
+export const updateProfile = mutation({
+  args: {
+    fullname: v.string(),
+    bio: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    // 1. Отримання поточного користувача
+    const currentUser = await getAuthenticatedUser(ctx);
+
+    // 2. Оновлення профілю
+    await ctx.db.patch(currentUser._id, {
+      fullname: args.fullname,
+      bio: args.bio,
+    });
+  },
+});
