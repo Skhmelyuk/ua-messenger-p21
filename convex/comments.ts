@@ -1,6 +1,7 @@
 import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { getAuthenticatedUser } from "./users";
+import { internal } from "./_generated/api";
 
 export const addComment = mutation({
   args: { content: v.string(), postId: v.id("posts") },
@@ -26,6 +27,21 @@ export const addComment = mutation({
         commentId,
       });
     }
+
+    const postOwner = await ctx.db.get(post.userId);
+    if (postOwner?.pushToken) {
+      await ctx.scheduler.runAfter(
+        0,
+        internal.pushNotifications.sendPushNotification,
+        {
+          pushToken: postOwner.pushToken,
+          title: "Новий коментар 💬",
+          body: `${currentUser.username}: ${args.content}`,
+          data: { postId: args.postId },
+        },
+      );
+    }
+
     return commentId;
   },
 });

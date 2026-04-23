@@ -13,6 +13,7 @@ export default defineSchema({
     posts: v.number(),
     clerkId: v.string(),
     tokenIdentifier: v.string(),
+    pushToken: v.optional(v.string()),
   })
     .index("by_clerkId", ["clerkId"])
     .index("by_tokenIdentifier", ["tokenIdentifier"]),

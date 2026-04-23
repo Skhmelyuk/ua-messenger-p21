@@ -66,6 +66,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.RECORD_AUDIO",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE",
+        "android.permission.POST_NOTIFICATIONS",
       ],
     },
 
@@ -90,6 +93,14 @@ export default ({ config }: ConfigContext): ExpoConfig => {
               pickFirst: ["META-INF/versions/9/OSGI-INF/MANIFEST.MF"],
             },
           },
+        },
+      ],
+      [
+        "expo-notifications",
+        {
+          icon: "./assets/images/icon.png",
+          color: "#000000",
+          sounds: [],
         },
       ],
     ],

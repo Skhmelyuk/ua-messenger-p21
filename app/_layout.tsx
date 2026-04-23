@@ -6,7 +6,14 @@ import { useFonts } from "expo-font";
 import { useCallback } from "react";
 import * as SplashScreen from "expo-splash-screen";
 
+import { usePushNotifications } from "@/hooks/usePushNotifications";
+
 SplashScreen.preventAutoHideAsync();
+
+function AppContent() {
+  usePushNotifications();
+  return <InitialLayout />;
+}
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -26,7 +33,7 @@ export default function RootLayout() {
         style={{ flex: 1, backgroundColor: "#000" }}
         onLayout={onLayoutRootView}
       >
-        <InitialLayout />
+        <AppContent />
       </SafeAreaView>
     </ClerkAndConvexProvider>
   );

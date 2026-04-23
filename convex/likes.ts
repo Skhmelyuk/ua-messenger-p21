@@ -1,6 +1,7 @@
 import { mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthenticatedUser } from "./users";
+import { internal } from "./_generated/api";
 
 export const toggleLike = mutation({
   args: { postId: v.id("posts") },
@@ -35,7 +36,23 @@ export const toggleLike = mutation({
           senderId: currentUser._id,
           postId: args.postId,
         });
+
+        // Відправка push-сповіщення
+        const receiver = await ctx.db.get(post.userId);
+        if (receiver?.pushToken) {
+          await ctx.scheduler.runAfter(
+            0,
+            internal.pushNotifications.sendPushNotification,
+            {
+              pushToken: receiver.pushToken,
+              title: "Новий лайк ❤️",
+              body: `${currentUser.username} вподобав ваш пост`,
+              data: { postId: args.postId },
+            },
+          );
+        }
       }
+
       return true; // liked
     }
   },
