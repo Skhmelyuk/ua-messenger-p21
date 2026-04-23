@@ -1,4 +1,5 @@
-import { query } from "./_generated/server";
+import { query, mutation } from "./_generated/server";
+import { v } from "convex/values";
 import { getAuthenticatedUser } from "./users";
 
 export const getNotifications = query({
@@ -45,5 +46,28 @@ export const getNotifications = query({
     );
 
     return notificationsWithInfo;
+  },
+});
+
+export const deleteNotification = mutation({
+  args: {
+    notificationId: v.id("notifications"),
+  },
+  handler: async (ctx, args) => {
+    const currentUser = await getAuthenticatedUser(ctx);
+
+    const notification = await ctx.db.get(args.notificationId);
+
+    if (!notification) {
+      throw new Error("Notification not found");
+    }
+
+    if (notification.receiverId !== currentUser._id) {
+      throw new Error("You can only delete your own notifications");
+    }
+
+    await ctx.db.delete(args.notificationId);
+
+    return { success: true };
   },
 });

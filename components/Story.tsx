@@ -8,9 +8,15 @@ type Story = {
   hasStory: boolean;
 };
 
-export default function Story({ story }: { story: Story }) {
+export default function Story({
+  story,
+  onPress,
+}: {
+  story: Story;
+  onPress?: () => void;
+}) {
   return (
-    <TouchableOpacity style={styles.storyWrapper}>
+    <TouchableOpacity style={styles.storyWrapper} onPress={onPress}>
       <View style={[styles.storyRing, !story.hasStory && styles.noStory]}>
         <Image source={{ uri: story.avatar }} style={styles.storyAvatar} />
       </View>

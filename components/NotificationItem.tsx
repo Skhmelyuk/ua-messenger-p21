@@ -30,7 +30,7 @@ export function NotificationItem({ notification }: NotificationProps) {
       {/* CONTENT */}
       <View style={styles.notificationContent}>
         {/* Avatar with Icon Badge */}
-        <Link href={`/notifications`}>
+        <Link href={`/user/${notification.sender._id}`} asChild>
           <TouchableOpacity style={styles.avatarContainer}>
             <Image
               source={notification.sender.image}
@@ -52,7 +52,7 @@ export function NotificationItem({ notification }: NotificationProps) {
 
         {/* Notification Info */}
         <View style={styles.notificationInfo}>
-          <Link href={`/notifications`}>
+          <Link href={`/user/${notification.sender._id}`} asChild>
             <TouchableOpacity>
               <Text style={styles.username}>
                 {notification.sender.username}

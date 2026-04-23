@@ -15,6 +15,7 @@ import type * as likes from "../likes.js";
 import type * as notifications from "../notifications.js";
 import type * as posts from "../posts.js";
 import type * as pushNotifications from "../pushNotifications.js";
+import type * as stories from "../stories.js";
 import type * as users from "../users.js";
 
 import type {
@@ -31,6 +32,7 @@ declare const fullApi: ApiFromModules<{
   notifications: typeof notifications;
   posts: typeof posts;
   pushNotifications: typeof pushNotifications;
+  stories: typeof stories;
   users: typeof users;
 }>;
 

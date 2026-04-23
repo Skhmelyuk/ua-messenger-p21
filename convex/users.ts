@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query, MutationCtx, QueryCtx } from "./_generated/server";
+import { Id } from "./_generated/dataModel";
 
 export const getAuthenticatedUser = async (ctx: QueryCtx | MutationCtx) => {
   const identity = await ctx.auth.getUserIdentity();
@@ -122,5 +123,130 @@ export const savePushToken = mutation({
     await ctx.db.patch(currentUser._id, {
       pushToken: args.pushToken,
     });
+  },
+});
+
+export const getStoriesUsers = query({
+  handler: async (ctx) => {
+    const currentUser = await getAuthenticatedUser(ctx);
+    const now = Date.now();
+
+    const follows = await ctx.db
+      .query("follows")
+      .withIndex("by_follower", (q) => q.eq("followerId", currentUser._id))
+      .collect();
+
+    const followingIds = follows.map((f) => f.followingId);
+
+    const followingUsers = await Promise.all(
+      followingIds.map((id) => ctx.db.get(id)),
+    );
+
+    const hasActiveStory = async (userId: Id<"users">) => {
+      const story = await ctx.db
+        .query("stories")
+        .withIndex("by_user", (q) => q.eq("userId", userId))
+        .filter((q) => q.gt(q.field("expiresAt"), now))
+        .first();
+      return !!story;
+    };
+
+    const currentUserHasStory = await hasActiveStory(currentUser._id);
+
+    const stories = [
+      {
+        id: currentUser._id,
+        username: "You",
+        avatar: currentUser.image,
+        hasStory: currentUserHasStory,
+      },
+      ...(await Promise.all(
+        followingUsers
+          .filter((user) => user !== null)
+          .map(async (user) => ({
+            id: user!._id,
+            username: user!.username,
+            avatar: user!.image,
+            hasStory: await hasActiveStory(user!._id),
+          })),
+      )),
+    ];
+
+    return stories;
+  },
+});
+
+export const getUserProfile = query({
+  args: { id: v.id("users") },
+  handler: async (ctx, args) => {
+    const user = await ctx.db.get(args.id);
+    if (!user) throw new Error("User not found");
+    return user;
+  },
+});
+
+export const isFollowing = query({
+  args: { followingId: v.id("users") },
+  handler: async (ctx, args) => {
+    const currentUser = await getAuthenticatedUser(ctx);
+
+    const follow = await ctx.db
+      .query("follows")
+      .withIndex("by_both", (q) =>
+        q.eq("followerId", currentUser._id).eq("followingId", args.followingId),
+      )
+      .first();
+
+    return !!follow;
+  },
+});
+
+async function updateFollowCounts(
+  ctx: MutationCtx,
+  followerId: Id<"users">,
+  followingId: Id<"users">,
+  isFollow: boolean,
+) {
+  const follower = await ctx.db.get(followerId);
+  const following = await ctx.db.get(followingId);
+
+  if (follower && following) {
+    await ctx.db.patch(followerId, {
+      following: follower.following + (isFollow ? 1 : -1),
+    });
+    await ctx.db.patch(followingId, {
+      followers: following.followers + (isFollow ? 1 : -1),
+    });
+  }
+}
+
+export const toggleFollow = mutation({
+  args: { followingId: v.id("users") },
+  handler: async (ctx, args) => {
+    const currentUser = await getAuthenticatedUser(ctx);
+
+    const existing = await ctx.db
+      .query("follows")
+      .withIndex("by_both", (q) =>
+        q.eq("followerId", currentUser._id).eq("followingId", args.followingId),
+      )
+      .first();
+
+    if (existing) {
+      await ctx.db.delete(existing._id);
+      await updateFollowCounts(ctx, currentUser._id, args.followingId, false);
+    } else {
+      await ctx.db.insert("follows", {
+        followerId: currentUser._id,
+        followingId: args.followingId,
+      });
+      await updateFollowCounts(ctx, currentUser._id, args.followingId, true);
+
+      await ctx.db.insert("notifications", {
+        receiverId: args.followingId,
+        senderId: currentUser._id,
+        type: "follow",
+      });
+    }
   },
 });

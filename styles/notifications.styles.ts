@@ -100,4 +100,29 @@ export const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+
+  // Swipe to delete
+  swipeContainer: {
+    position: "relative",
+    marginBottom: 20,
+  },
+  swipeContent: {
+    backgroundColor: COLORS.background,
+  },
+  deleteButton: {
+    position: "absolute",
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 100,
+    backgroundColor: "#EF4444",
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 8,
+  },
+  deleteText: {
+    color: COLORS.white,
+    fontSize: 12,
+    marginTop: 4,
+  },
 });

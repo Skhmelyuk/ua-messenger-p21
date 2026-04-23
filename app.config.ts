@@ -56,6 +56,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     android: {
       package: dynamicConfig.packageName,
       versionCode: 1,
+      googleServicesFile: "./google-services.json",
       adaptiveIcon: {
         backgroundColor: "#000000",
         foregroundImage: dynamicConfig.adaptiveIconForeground,

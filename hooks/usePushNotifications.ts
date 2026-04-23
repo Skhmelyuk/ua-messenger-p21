@@ -71,6 +71,14 @@ async function registerForPushNotificationsAsync(): Promise<string | null> {
     return null;
   }
 
-  const tokenData = await Notifications.getExpoPushTokenAsync();
-  return tokenData.data;
+  try {
+    const tokenData = await Notifications.getExpoPushTokenAsync();
+    return tokenData.data;
+  } catch (error) {
+    console.warn(
+      "Could not get push token (Google Play Services may not be available):",
+      error,
+    );
+    return null;
+  }
 }
